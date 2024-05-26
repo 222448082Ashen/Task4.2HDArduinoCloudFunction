@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase LED Control</title>
+  <!-- Include Firebase SDK -->
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.8.3/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.8.3/firebase-auth.js";
+    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.8.3/firebase-database.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.8.3/firebase-analytics.js";
+
+    // web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyClSQ6mg1TLCKMHU86ybfxPPi430ii60M8",
+      authDomain: "traffic-light-1a02f.firebaseapp.com",
+      databaseURL: "https://traffic-light-1a02f-default-rtdb.firebaseio.com",
+      projectId: "traffic-light-1a02f",
+      storageBucket: "traffic-light-1a02f.appspot.com",
+      messagingSenderId: "695384515365",
+      appId: "1:695384515365:web:277aa0c7eb245a9354b0cc",
+      measurementId: "G-2CE83KMD6L"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const auth = getAuth(app);
+    const database = getDatabase(app);
+
+    // Authenticate anonymously
+    signInAnonymously(auth)
+      .then(() => {
+        console.log('Authenticated anonymously');
+      })
+      .catch((error) => {
+        console.error('Error during authentication', error);
+      });
+
+    // Reference to the LED states and timers
+    const blueStateRef = ref(database, 'LEDS/blue/state');
+    const blueTimerRef = ref(database, 'LEDS/blue/timer');
+    const greenStateRef = ref(database, 'LEDS/green/state');
+    const greenTimerRef = ref(database, 'LEDS/green/timer');
+    const redStateRef = ref(database, 'LEDS/red/state');
+    const redTimerRef = ref(database, 'LEDS/red/timer');
+
+    // Function to update checkbox and timer based on database values
+    function updateControls(snapshot, controlId) {
+      const value = snapshot.val();
+      console.log(`Updating ${controlId} to ${value}`);
+      document.getElementById(controlId).value = value;
+      const checkbox = document.getElementById(controlId);
+      if (typeof value === 'boolean') {
+        checkbox.checked = value;
+      }
+
+    }
+
+
+    // Retrieve initial states and timers
+    onValue(blueStateRef, (snapshot) => updateControls(snapshot, 'blue'));
+    onValue(blueTimerRef, (snapshot) => updateControls(snapshot, 'blueTimer'));
+    onValue(greenStateRef, (snapshot) => updateControls(snapshot, 'green'));
+    onValue(greenTimerRef, (snapshot) => updateControls(snapshot, 'greenTimer'));
+    onValue(redStateRef, (snapshot) => updateControls(snapshot, 'red'));
+    onValue(redTimerRef, (snapshot) => updateControls(snapshot, 'redTimer'));
+
+    // Save the states and timers to the database
+    window.saveStates = function() {
+      const blueState = document.getElementById('blue').checked;
+      const blueTimer = document.getElementById('blueTimer').value;
+      const greenState = document.getElementById('green').checked;
+      const greenTimer = document.getElementById('greenTimer').value;
+      const redState = document.getElementById('red').checked;
+      const redTimer = document.getElementById('redTimer').value;
+
+      console.log('Saving states and timers:', { blueState, blueTimer, greenState, greenTimer, redState, redTimer });
+
+      set(blueStateRef, blueState);
+      set(blueTimerRef, blueTimer);
+      set(greenStateRef, greenState);
+      set(greenTimerRef, greenTimer);
+      set(redStateRef, redState);
+      set(redTimerRef, redTimer);
+    }
+  </script>
+</head>
+<body>
+  <h1>LED Control</h1>
+  <form id="ledForm">
+    <label>
+      <input type="checkbox" id="blue" name="blue"> Blue LED
+      <input type="number" id="blueTimer" name="blueTimer" placeholder="Timer (seconds)">
+    </label><br>
+    <label>
+      <input type="checkbox" id="green" name="green"> Green LED
+      <input type="number" id="greenTimer" name="greenTimer" placeholder="Timer (seconds)">
+    </label><br>
+    <label>
+      <input type="checkbox" id="red" name="red"> Red LED
+      <input type="number" id="redTimer" name="redTimer" placeholder="Timer (seconds)">
+    </label><br>
+    <button type="button" onclick="saveStates()">Save</button>
+  </form>
+</body>
+</html>
